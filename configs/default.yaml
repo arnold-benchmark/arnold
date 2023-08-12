@@ -1,0 +1,106 @@
+hydra:
+  run:
+    dir: ${exp_dir}
+
+base_root: /root/arnold
+data_root: /vagrant/data
+asset_root: /vagrant
+output_root: ${base_root}/output
+
+mode: train   # train or eval
+task: null
+model: null
+obs_type: rgb
+lang_encoder: clip
+state_head: 0
+
+exp_name: ${mode}_${model}_${lang_encoder}_${state_head}
+exp_dir: ${output_root}/${task}/${exp_name}
+checkpoint_dir: ${exp_dir}/ckpts
+
+
+# ------------------running arguments------------------
+batch_size: 1
+steps: 100000
+epochs: null
+log_interval: 50
+save_interval: 10000
+resume: null   # checkpoint file to resume training
+use_gt: [False, False]
+visualize: False
+eval_splits: [test, novel_object, novel_scene, novel_state, any_state]
+
+
+# ------------------environment------------------
+cameras: [front, base, left, wrist_bottom, wrist]
+img_size: 128
+offset_bound: [-0.63, 0, -0.63, 0.63, 1.26, 0.63]
+iso_surface: False
+
+
+# ------------------cliport6d------------------
+cliport6d:
+  train:
+    attn_stream_fusion_type: add
+    trans_stream_fusion_type: conv
+    lang_fusion_type: mult
+    n_rotations: 36
+    batchnorm: False
+
+
+# ------------------peract------------------
+voxel_size: 120
+rotation_resolution: 5
+t5_cfg: null   # path to t5-base
+roberta_cfg: null   # path to roberta-base
+lang_embed_dim:
+  clip: 512
+  t5: 768
+  roberta: 768
+  none: 0
+
+
+# ------------------bclang------------------
+bc_lang:
+  camera_name: front
+  activation: lrelu
+  lr: 5e-4
+  weight_decay: 1e-6
+  image_resolution: [128, 128]
+  grad_clip: 0.1
+
+
+# ------------------motion planners------------------
+horizon: 2400
+success_check_period: 300
+gripper_trigger_period: 50
+
+num_stages:
+  pickup_object: 3
+  reorient_object: 3
+  open_drawer: 3
+  close_drawer: 3
+  open_cabinet: 3
+  close_cabinet: 3
+  pour_water: 6
+  transfer_water: 6
+
+gripper_open:
+  pickup_object: [True, False, False]
+  reorient_object: [True, False, False]
+  open_drawer: [True, False, False]
+  close_drawer: [True, False, False]
+  open_cabinet: [True, False, False]
+  close_cabinet: [True, False, False]
+  pour_water: [True, False, False, False, False, False]
+  transfer_water: [True, False, False, False, False, False]
+
+need_interpolation:
+  pickup_object: False
+  reorient_object: False
+  open_drawer: True
+  close_drawer: True
+  open_cabinet: True
+  close_cabinet: True
+  pour_water: True
+  transfer_water: True

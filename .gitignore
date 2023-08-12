@@ -1,3 +1,8 @@
+*.npz
+/data
+*.zip
+output/
+arnold_tmp.code-workspace
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -127,3 +132,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# customize
+test.py

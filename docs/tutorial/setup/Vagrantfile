@@ -1,0 +1,29 @@
+system('xhost +')
+Vagrant.configure("2") do |config|
+  config.ssh.insert_key = true
+  config.vm.hostname = "ubuntu"
+  config.ssh.username = "root"
+  config.ssh.password = "root"
+  config.vm.provider :docker do |d|
+    d.create_args = ['--sysctl', 'net.ipv4.ip_default_ttl=66', '--sysctl', 'net.ipv6.conf.all.hop_limit=66', 
+    '-v', '/var/lib/docker', '--shm-size', '2gb', 
+    '-v', '/tmp/.X11-unix:/tmp/.X11-unix', '--gpus', 'all', '-e', '"ACCEPT_EULA=Y"', 
+    '-v', '/etc/vulkan/icd.d/nvidia_icd.json:/etc/vulkan/icd.d/nvidia_icd.json', 
+    '-v', '/etc/vulkan/implicit_layer.d/nvidia_layers.json:/etc/vulkan/implicit_layer.d/nvidia_layers.json', 
+    '-v', '/usr/share/glvnd/egl_vendor.d/10_nvidia.json:/usr/share/glvnd/egl_vendor.d/10_nvidia.json', 
+    ]
+     d.image = "arnold"
+     d.remains_running = true
+     d.has_ssh = true
+  end
+
+
+config.vm.provision "shell", inline: <<-SHELL
+echo "export DISPLAY=#{ENV['DISPLAY']}" >> /root/.profile
+# xfce4-power-manager -q
+SHELL
+
+#   config.vm.provision :shell, path: "install.sh", privileged: false
+config.vm.provision :shell, inline: "service xrdp restart", run: 'always'
+
+end

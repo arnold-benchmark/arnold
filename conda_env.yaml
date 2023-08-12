@@ -1,0 +1,20 @@
+name: arnold
+channels:
+  - defaults
+dependencies:
+  - python=3.7.13
+  - pip:
+      - importlib-metadata==5.0.0
+      - botocore==1.19.52
+      - cython==0.29.32
+      - einops==0.6.0
+      - gym==0.17.3
+      - hydra-core==1.0.5
+      - kornia==0.4.1
+      - opencv-python==4.2.0.32
+      - scikit-image==0.17.2
+      - scipy==1.7.3
+      - sentencepiece==0.1.97
+      - six==1.16.0
+      - tensorboard==2.11.0
+      - transformers==4.3.2
