@@ -18,6 +18,21 @@ There are two setup approaches: **docker-based** and **conda-based**. We recomme
    ```
 2. Create a workspace and place the [Vagrantfile](./Vagrantfile) into the workspace.
 3. Build vagrant in the workspace via `vagrant up`. This might take a long time if you are using the image from the dockerHub instead of building it locally. You can use a system monitor to stay checking the process.
+It's also possible that Vagrant file contains the wrong options for your `nvidia_layers.json` and `nvidia_icd.json`. Make sure the jsons are not empty.
+
+One possibility is :
+
+‘-v’, ‘/usr/share/vulkan/implicit_layer.d/nvidia_layers.json:/etc/vulkan/implicit_layer.d/nvidia_layers.json’,
+
+‘-v’, ‘/usr/share/vulkan/icd.d/nvidia_icd.json:/etc/vulkan/icd.d/nvidia_icd.json’,
+
+another one is : 
+
+'-v', '/etc/vulkan/icd.d/nvidia_icd.json:/etc/vulkan/icd.d/nvidia_icd.json', 
+
+'-v', '/etc/vulkan/implicit_layer.d/nvidia_layers.json:/etc/vulkan/implicit_layer.d/nvidia_layers.json', 
+
+modify these options according to your system.
    ```bash
    cd workspace
    vagrant up
