@@ -7,21 +7,22 @@ For example, run:
         python eval.py task=multi model=peract lang_encoder=clip \
                        mode=eval use_gt=[0,0] visualize=0
 """
-
-import os
 import hydra
-import torch
+import json
+import logging
 import numpy as np
+import os
+import torch
 from pathlib import Path
 from scipy.spatial.transform import Rotation as R
 
-from utils.env import get_action
-from dataset import InstructionEmbedding
 from environment.runner_utils import get_simulation
 simulation_app, simulation_context, _ = get_simulation(headless=False, gpu_id=0)
 
+from dataset import InstructionEmbedding
 from tasks import load_task
-import logging
+from utils.env import get_action
+
 logger = logging.getLogger(__name__)
 
 
@@ -99,48 +100,66 @@ def main(cfg):
         ]
 
     if use_gt[0]:
-        log_path = os.path.join(cfg.exp_dir, 'eval_w_gt.log')
+        if use_gt[1]:
+            log_path = os.path.join(cfg.exp_dir, 'eval_w_2gt_log.json')
+        else:
+            log_path = os.path.join(cfg.exp_dir, 'eval_w_1gt_log.json')
     else:
-        log_path = os.path.join(cfg.exp_dir, 'eval_wo_gt.log')
-    
-    evaluated = []
+        log_path = os.path.join(cfg.exp_dir, 'eval_wo_gt_log.json')
+
+    """
+    eval log structure:
+    {
+        'task_name': {
+            'split': {
+                'stats': {
+                    'fname': int (1, 0, -1)
+                },
+                'score': float
+            }
+        }
+    }
+    """
+
     if os.path.exists(log_path):
-        # resume
         with open(log_path, 'r') as f:
-            eval_log = f.readlines()
-        for line in eval_log:
-            if 'score' in line:
-                task, eval_split = line.split(':')[0].split(' ')[:2]
-                evaluated.append((task, eval_split))
+            eval_log = json.load(f)
     else:
-        eval_log = []
+        eval_log = {}
 
     for task in task_list:
+        if task not in eval_log:
+            eval_log[task] = {}
         for eval_split in cfg.eval_splits:
-            if (task, eval_split) in evaluated:
+            if eval_split not in eval_log[task]:
+                eval_log[task][eval_split] = {}
+            elif 'score' in eval_log[task][eval_split]:
                 continue
             
             if os.path.exists(os.path.join(cfg.data_root, task, eval_split)):
                 logger.info(f'Evaluating {task} {eval_split}')
-                eval_log.append(f'Evaluating {task} {eval_split}\n')
                 data, fnames = load_data(data_path=os.path.join(cfg.data_root, task, eval_split))
             else:
                 logger.info(f'{eval_split} not exist')
-                eval_log.append(f'{eval_split} not exist\n')
                 continue
-            
+
             correct = 0
             total = 0
+            stats = {}
             while len(data) > 0:
                 anno = data.pop(0)
                 fname = fnames.pop(0)
                 gt_frames = anno['gt']
                 robot_base = gt_frames[0]['robot_base']
                 gt_actions = [
-                        gt_frames[1]['position_rotation_world'], gt_frames[2]['position_rotation_world'],
-                        gt_frames[3]['position_rotation_world'] if 'water' not in task \
-                        else (gt_frames[3]['position_rotation_world'][0], gt_frames[4]['position_rotation_world'][1])
-                    ]
+                    gt_frames[1]['position_rotation_world'], gt_frames[2]['position_rotation_world'],
+                    gt_frames[3]['position_rotation_world'] if 'water' not in task \
+                    else (gt_frames[3]['position_rotation_world'][0], gt_frames[4]['position_rotation_world'][1])
+                ]
+                if use_gt[0]:
+                    assert gt_actions[0] is not None and gt_actions[1] is not None, "Use first gt action but it is missing"
+                if use_gt[1]:
+                    assert gt_actions[2] is not None, "Use second gt action but it is missing"
 
                 env, object_parameters, robot_parameters, scene_parameters = load_task(cfg.asset_root, npz=anno, cfg=cfg)
 
@@ -148,14 +167,10 @@ def main(cfg):
                                 robot_base=robot_base, gt_actions=gt_actions)
 
                 logger.info(f'Instruction: {gt_frames[0]["instruction"]}')
-                gt_actions = [
-                    gt_frames[1]['position_rotation_world'], gt_frames[2]['position_rotation_world'],
-                    gt_frames[3]['position_rotation_world'] if 'water' not in task \
-                    else (gt_frames[3]['position_rotation_world'][0], gt_frames[4]['position_rotation_world'][1])
-                ]
-
                 logger.info('Ground truth action:')
                 for gt_action, grip_open in zip(gt_actions, cfg.gripper_open[task]):
+                    if gt_action is None:
+                        continue
                     act_pos, act_rot = gt_action
                     act_rot = R.from_quat(act_rot[[1,2,3,0]]).as_euler('XYZ', degrees=True)
                     logger.info(f'trans={act_pos}, orient(euler XYZ)={act_rot}, gripper_open={grip_open}')
@@ -190,14 +205,15 @@ def main(cfg):
                 total += 1
                 log_str = f'correct: {correct} | total: {total} | remaining: {len(data)}'
                 logger.info(f'{log_str}\n')
-            
-            eval_log.append(f'{log_str}\n')
+                stats[fname] = suc
+
             logger.info(f'{task} {eval_split} score: {correct/total*100:.2f}\n\n')
-            eval_log.append(f'{task} {eval_split} score: {correct/total*100:.2f}\n\n')
+            eval_log[task][eval_split]['stats'] = stats
+            eval_log[task][eval_split]['score'] = correct / total
 
             with open(log_path, 'w') as f:
-                f.writelines(eval_log)
-    
+                json.dump(eval_log, f, indent=2)
+
     simulation_app.close()
 
 

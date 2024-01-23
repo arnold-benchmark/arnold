@@ -28,17 +28,17 @@ def get_available_vrams():
     return free_memeory
 
 
-def get_simulation(simulation_app = None, simulation_context=None, headless=True, gpu_id=0, dt=1.0/120.0):
+def get_simulation(simulation_app=None, simulation_context=None, headless=True, gpu_id=0, dt=1.0/120.0, high_quality=False):
     _headless = headless
     new_simulation = False
 
     if simulation_app is None:
-        
-        simulation_app = SimulationApp({"headless": _headless, "anti_aliasing": 0, 'active_gpu':gpu_id, 'multi_gpu': False})
-        
-        # for high quality path tracing
-        # simulation_app = SimulationApp({"headless": _headless, "anti_aliasing": 0, 'active_gpu':gpu_id, 'multi_gpu': False,
-        #                                 "renderer": "PathTracing", "samples_per_pixel_per_frame": 32, "max_bounces": 32})
+        if high_quality:
+            # for high quality path tracing
+            simulation_app = SimulationApp({"headless": _headless, "anti_aliasing": 0, 'active_gpu':gpu_id, 'multi_gpu': False,
+                                            "renderer": "PathTracing", "samples_per_pixel_per_frame": 32, "max_bounces": 32})
+        else:
+            simulation_app = SimulationApp({"headless": _headless, "anti_aliasing": 0, 'active_gpu':gpu_id, 'multi_gpu': False})
 
         logging.getLogger("omni.hydra").setLevel(logging.ERROR)
         logging.getLogger("omni.isaac.urdf").setLevel(logging.ERROR)

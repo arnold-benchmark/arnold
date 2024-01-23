@@ -7,21 +7,23 @@ Script for model selection. For example, run:
         python ckpt_selection.py task=multi model=peract lang_encoder=clip \
                                  mode=eval visualize=0
 """
-
-import os
 import hydra
-import torch
-import shutil
+import json
+import logging
 import numpy as np
+import os
+import shutil
+import torch
 from pathlib import Path
 from scipy.spatial.transform import Rotation as R
-from utils.env import get_action
-from dataset import InstructionEmbedding
+
 from environment.runner_utils import get_simulation
 simulation_app, simulation_context, _ = get_simulation(headless=True, gpu_id=0)
 
+from dataset import InstructionEmbedding
 from tasks import load_task
-import logging
+from utils.env import get_action
+
 logger = logging.getLogger(__name__)
 
 
@@ -106,43 +108,40 @@ def main(cfg):
             simulation_app.close()
             return 1
     ckpts_list = sorted(ckpts_list, key=lambda x: int(x.split('_')[-1].split('.')[0]))
-    ckpts_dict = {}
 
-    log_path = os.path.join(cfg.exp_dir, 'select.log')
+    log_path = os.path.join(cfg.exp_dir, 'select_log.json')
+    """
+    val log structure:
+    {
+        'ckpt_name': {
+            'task': {
+                # 'stats': {
+                #     'fname': int (1, 0, -1)
+                # },
+                'score': float
+            }
+        }
+    }
+    """
 
-    validated = []   # finished tuples (ckpt_name, task)
-    score_list = []   # scores per task to average for a particular ckpt
     if os.path.exists(log_path):
-        # resume
         with open(log_path, 'r') as f:
-            val_log = f.readlines()
-        
-        for line in val_log:
-            # record finished ckpts
-            if 'score' in line:
-                ckpt_name, score = line.split(':')[0].split(' ')[0], float(line.split(':')[1]) / 100
-                ckpts_dict.update({ckpt_name: score})
-                
-        for line in val_log:
-            # skip validated and resume for current ckpt
-            if 'pth' in line and ':' in line and 'score' not in line:
-                ckpt_name, task = line.split(':')[0].split(' ')
-                validated.append((ckpt_name, task))
-                if ckpt_name not in ckpts_dict:
-                    score_list.append(float(line.split(':')[1]) / 100)
-        
+            val_log = json.load(f)
     else:
-        val_log = []
+        val_log = {}
     
     for ckpt_name in ckpts_list:
         agent = load_ckpt(cfg, agent, os.path.join(cfg.checkpoint_dir, ckpt_name), device)
-        for task in task_list:
-            if (ckpt_name, task) in validated:
+        if ckpt_name not in val_log:
+            val_log[ckpt_name] = {}
+        for task_name in task_list:
+            if task_name not in val_log[ckpt_name]:
+                val_log[ckpt_name][task_name] = {}
+            elif 'score' in val_log[ckpt_name][task_name]:
                 continue
-            
-            logger.info(f'Evaluating {ckpt_name} {task}')
-            val_log.append(f'Evaluating {ckpt_name} {task}\n')
-            data = load_data(data_path=os.path.join(cfg.data_root, task, 'val'))
+
+            logger.info(f'Evaluating {ckpt_name} {task_name}')
+            data = load_data(data_path=os.path.join(cfg.data_root, task_name, 'val'))
             correct = 0
             total = 0
             while len(data) > 0:
@@ -150,10 +149,10 @@ def main(cfg):
                 gt_frames = anno['gt']
                 robot_base = gt_frames[0]['robot_base']
                 gt_actions = [
-                        gt_frames[1]['position_rotation_world'], gt_frames[2]['position_rotation_world'],
-                        gt_frames[3]['position_rotation_world'] if 'water' not in task \
-                        else (gt_frames[3]['position_rotation_world'][0], gt_frames[4]['position_rotation_world'][1])
-                    ]
+                    gt_frames[1]['position_rotation_world'], gt_frames[2]['position_rotation_world'],
+                    gt_frames[3]['position_rotation_world'] if 'water' not in task_name \
+                    else (gt_frames[3]['position_rotation_world'][0], gt_frames[4]['position_rotation_world'][1])
+                ]
 
                 env, object_parameters, robot_parameters, scene_parameters = load_task(cfg.asset_root, npz=anno, cfg=cfg)
 
@@ -161,14 +160,8 @@ def main(cfg):
                                 robot_base=robot_base, gt_actions=gt_actions)
 
                 logger.info(f'Instruction: {gt_frames[0]["instruction"]}')
-                gt_actions = [
-                    gt_frames[1]['position_rotation_world'], gt_frames[2]['position_rotation_world'],
-                    gt_frames[3]['position_rotation_world'] if 'water' not in task \
-                    else (gt_frames[3]['position_rotation_world'][0], gt_frames[4]['position_rotation_world'][1])
-                ]
-
                 logger.info('Ground truth action:')
-                for gt_action, grip_open in zip(gt_actions, cfg.gripper_open[task]):
+                for gt_action, grip_open in zip(gt_actions, cfg.gripper_open[task_name]):
                     act_pos, act_rot = gt_action
                     act_rot = R.from_quat(act_rot[[1,2,3,0]]).as_euler('XYZ', degrees=True)
                     logger.info(f'trans={act_pos}, orient(euler XYZ)={act_rot}, gripper_open={grip_open}')
@@ -202,25 +195,15 @@ def main(cfg):
                 log_str = f'correct: {correct} | total: {total} | remaining: {len(data)}'
                 logger.info(f'{log_str}\n')
             
-            val_log.append(f'{log_str}\n')
-            logger.info(f'{ckpt_name} {task}: {correct/total*100:.2f}\n\n')
-            val_log.append(f'{ckpt_name} {task}: {correct/total*100:.2f}\n\n')
-            score_list.append(correct/total)
+            logger.info(f'{ckpt_name} {task_name}: {correct/total*100:.2f}\n\n')
+            val_log[ckpt_name][task_name]['score'] = correct / total
             
             with open(log_path, 'w') as f:
-                f.writelines(val_log)
-        
-        if ckpt_name not in ckpts_dict and len(score_list) > 0:
-            ckpts_dict.update({ckpt_name: np.mean(score_list)})
-            logger.info(f'{ckpt_name} score: {np.mean(score_list)*100:.2f}\n\n')
-            val_log.append(f'{ckpt_name} score: {np.mean(score_list)*100:.2f}\n\n\n')
-            with open(log_path, 'w') as f:
-                f.writelines(val_log)
-        
-            score_list = []
-    
-    selected_idx = np.argmax(list(ckpts_dict.values()))
-    selected_name = list(ckpts_dict.keys())[selected_idx]
+                json.dump(val_log, f, indent=2)
+
+    ckpt_scores = [np.mean([val_log[ckpt_name][task_name]['score'] for task_name in task_list]) for ckpt_name in ckpts_list]
+    selected_idx = ckpt_scores.argmax()
+    selected_name = ckpts_list[selected_idx]
 
     for ckpt_name in ckpts_list:
         if ckpt_name == selected_name:
@@ -229,15 +212,10 @@ def main(cfg):
             new_name = '_'.join(new_name)
             shutil.move(os.path.join(cfg.checkpoint_dir, ckpt_name), os.path.join(cfg.checkpoint_dir, new_name))
             logger.info(f'Select {selected_name} as best')
-            val_log.append(f'Select {selected_name} as best\n')
         # else:
         #     os.remove(os.path.join(cfg.checkpoint_dir, ckpt_name))
         #     logger.info(f'Remove {ckpt_name}')
-        #     val_log.append(f'Remove {ckpt_name}\n')
-    
-    with open(log_path, 'w') as f:
-        f.writelines(val_log)
-    
+
     simulation_app.close()
 
 
