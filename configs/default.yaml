@@ -2,9 +2,9 @@ hydra:
   run:
     dir: ${exp_dir}
 
-base_root: /mnt/huangjiangyong/arnold
-data_root: ${base_root}/data
-asset_root: /home/huangjiangyong/repo/VRKitchen2.0
+base_root: /root/arnold
+data_root: /vagrant/data
+asset_root: /vagrant
 output_root: ${base_root}/output
 
 mode: train   # train or eval
@@ -52,8 +52,8 @@ cliport6d:
 # ------------------peract------------------
 voxel_size: 120
 rotation_resolution: 5
-t5_cfg: /mnt/huangjiangyong/t5-base
-roberta_cfg: /mnt/huangjiangyong/roberta-base
+t5_cfg: null   # path to t5-base
+roberta_cfg: null   # path to roberta-base
 lang_embed_dim:
   clip: 512
   t5: 768
