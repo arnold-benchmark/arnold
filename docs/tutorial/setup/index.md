@@ -5,21 +5,35 @@ There are two setup approaches: **docker-based** and **conda-based**. We recomme
 ## Docker-based
 
 0. Prerequisite. We recommend the OS version <tt>Ubuntu 18.04/20.04</tt> and NVIDIA driver version <tt>525.60.11</tt>. Docker-based setup is not guaranteed to work on other OS or driver versions.
-1. Build docker.
+1. Generate NVIDIA NGC API Key
    - Log in [NVIDIA NGC](https://catalog.ngc.nvidia.com/). If you do not have an account, register one and log in.
    - Generate your NGC API key. You can refer to [Generating API key](https://docs.nvidia.com/ngc/gpu-cloud/ngc-user-guide/index.html#generating-api-key).
+   - Log into the NGC account on the instance
    ```bash
    docker login nvcr.io
    ```
    Type `$oauthtoken` for `Username`. Then paste your API key for `Password`. You should see `Login Succeeded`.
-   - Place the [Dockerfile](./Dockerfile) to a folder. Build the docker image inside this folder.
+2. Build the docker image inside the workspace.
    ```bash
+   git clone https://github.com/arnold-benchmark/arnold.git
+   cd arnold/workspace
    docker build -f Dockerfile -t "arnold" .
    ```
-2. Create a workspace and place the [Vagrantfile](./Vagrantfile) into the workspace.
-3. Build vagrant in the workspace via `vagrant up`. This might take a long time if you are using the image from the dockerHub instead of building it locally. You can use a system monitor to stay checking the process.
+3. Build vagrant in the workspace. This might take a long time if you are using the image from the dockerHub instead of building it locally. You can use a system monitor to stay checking the process.
+
+   It is also possible that `Vagrantfile` contains wrong paths for your `nvidia_icd.json` and `nvidia_layers.json`. Make sure they are not empty. For example, you should check the two paths: `/etc/vulkan/icd.d/nvidia_icd.json` and `/usr/share/vulkan/icd.d/nvidia_icd.json`, one of which would always exist.
+
+   ```ruby
+   # if jsons exist in /etc (default)
+   '-v', '/etc/vulkan/icd.d/nvidia_icd.json:/etc/vulkan/icd.d/nvidia_icd.json',
+   '-v', '/etc/vulkan/implicit_layer.d/nvidia_layers.json:/etc/vulkan/implicit_layer.d/nvidia_layers.json',
+
+   # if jsons exist in /usr, modify the two lines in Vagrantfile
+   '-v', '/usr/share/vulkan/icd.d/nvidia_icd.json:/etc/vulkan/icd.d/nvidia_icd.json',
+   '-v', '/usr/share/vulkan/implicit_layer.d/nvidia_layers.json:/etc/vulkan/implicit_layer.d/nvidia_layers.json',
+   ```
+   Check the above paths according to your system. After that, build vagrant.
    ```bash
-   cd workspace
    vagrant up
    ```
 4. After `vagrant up` finishes, run `vagrant ssh` and you are ready to go. Enjoy the full GUI experiment with docker and <tt>Isaac Sim</tt>. The docker environment provides a wide range of development tools as well. For more details check [readme](./docker_readme.md). Notably, you need to use `/isaac-sim/python.sh` to run `python`.
