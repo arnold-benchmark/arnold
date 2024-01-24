@@ -101,11 +101,12 @@ def main(cfg):
 
     if use_gt[0]:
         if use_gt[1]:
-            log_path = os.path.join(cfg.exp_dir, 'eval_w_2gt_log.json')
+            eval_setting = '2gt'
         else:
-            log_path = os.path.join(cfg.exp_dir, 'eval_w_1gt_log.json')
+            eval_setting = '1gt'
     else:
-        log_path = os.path.join(cfg.exp_dir, 'eval_wo_gt_log.json')
+        eval_setting = '0gt'
+    log_path = os.path.join(cfg.exp_dir, f'eval_{eval_setting}_log.json')
 
     """
     eval log structure:
@@ -174,6 +175,12 @@ def main(cfg):
                     act_pos, act_rot = gt_action
                     act_rot = R.from_quat(act_rot[[1,2,3,0]]).as_euler('XYZ', degrees=True)
                     logger.info(f'trans={act_pos}, orient(euler XYZ)={act_rot}, gripper_open={grip_open}')
+
+                if cfg.record:
+                    env.recorder.start_record(
+                        traj_dir=os.path.join(cfg.exp_dir, f'traj_{eval_setting}', os.path.split(fname)[-1]),
+                        checker=env.checker,
+                    )
 
                 try:
                     for i in range(2):

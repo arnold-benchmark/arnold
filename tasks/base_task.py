@@ -1,5 +1,6 @@
 
 from environment.parameters import *
+from utils.recorder import DataRecorder
 
 import omni
 from omni.isaac.core.prims import XFormPrim
@@ -35,6 +36,7 @@ class BaseTask(ABC):
         self.kit = omni.kit.app.get_app()
 
         self.objects_list = []
+        self.recorder = None
     
     def success(self):
         if hasattr(self, "checker") and self.checker and self.checker.success:
@@ -61,6 +63,9 @@ class BaseTask(ABC):
         self.timeline.stop()
         self._wait_for_loading()
         self.remove_objects()
+        if self.recorder is not None and self.recorder.record:
+            self.recorder.save_buffer()
+            self.recorder = None
     
     def reset(self,
               robot_parameters = None,
@@ -115,13 +120,10 @@ class BaseTask(ABC):
             self.kit.update()
 
         initialize(self.robot)
- 
-        self.articulations = []
-        
-        dc = _dynamic_control.acquire_dynamic_control_interface()
-        articulation = dc.get_articulation(f"/World_{0}/franka")
-        self.articulations.append(articulation)
-        
+
+        # self.dc = _dynamic_control.acquire_dynamic_control_interface()
+        # self.articulation = self.dc.get_articulation("/World_0/franka")
+
         ########## let physics settle
         if simulation_context is not None:
             for _ in range(60):
@@ -138,6 +140,9 @@ class BaseTask(ABC):
         ########## setup controller
         self.gripper_controller = self.robot.gripper
         self.c_controller = RMPFlowController(name="cspace_controller", robot_articulation=self.robot, physics_dt=1/120.0)
+
+        if self.cfg.record:
+            self.register_recorder()
 
         return self.render()
 
@@ -407,3 +412,23 @@ class BaseTask(ABC):
         sim.render()
         while is_stage_loading():
             sim.render()
+
+    def register_recorder(self):
+        index = 0
+        objects_paths = [prim.GetPath().pathString for prim in self.objects_list]
+        self.recorder = DataRecorder(self.robot.prim_path, objects_paths, self.robot, self.scene_parameters[index].task_type)
+
+    def try_record(self, actions):
+        if self.recorder is not None and self.recorder.record:
+            # dof_states = self.dc.get_articulation_dof_states(self.articulation, _dynamic_control.STATE_ALL)
+            dof_states = {
+                'pos': self.robot.get_joint_positions(),
+                'vel': self.robot.get_joint_velocities(),
+                # 'effort': self.robot.get_joint_efforts(),   # get_measured_joint_efforts() for Isaac Sim 2023
+                # getting effort has conflict with use_gpu_dynamics
+            }
+            self.recorder.record_data(
+                robot_states=dof_states,
+                actions=actions,
+                time_step=self.time_step,
+            )

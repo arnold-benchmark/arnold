@@ -152,13 +152,15 @@ class PickupObject(BaseTask):
                         for _ in range(self.cfg.gripper_trigger_period):
                             articulation_controller = self.robot.get_articulation_controller()
                             articulation_controller.apply_action(target_joint_positions_gripper)
+                            self.try_record(actions=target_joint_positions_gripper)
                             simulation_context.step(render=render)
-                        
+
                     else:
                         target_joint_positions_gripper = self.gripper_controller.forward(action="open")
                         for _ in range(self.cfg.gripper_trigger_period):
                             articulation_controller = self.robot.get_articulation_controller()
                             articulation_controller.apply_action(target_joint_positions_gripper)
+                            self.try_record(actions=target_joint_positions_gripper)
                             simulation_context.step(render=render)
 
                 current_target = None
@@ -175,6 +177,7 @@ class PickupObject(BaseTask):
                 
                 articulation_controller = self.robot.get_articulation_controller()
                 articulation_controller.apply_action(target_joint_positions)
+                self.try_record(actions=target_joint_positions)
 
             simulation_context.step(render=render)
             self.time_step += 1
