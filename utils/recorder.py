@@ -4,7 +4,7 @@ import omni.appwindow
 import numpy as np
 from omni.isaac.core.prims import XFormPrim
 from omni.isaac.core.utils.types import ArticulationAction
-
+import gzip
 
 class DataRecorder():
     def __init__(self, robot_path, target_paths, frankabot, task_type):
@@ -46,34 +46,32 @@ class DataRecorder():
         if not os.path.exists(self.traj_dir):
             os.makedirs(self.traj_dir)
 
-        with open(os.path.join(self.traj_dir, 'record_robot.csv'), 'w') as file1:
-            for line in self.buffer['robot']:
-                file1.write(line)
+        # Save CSV files with gzip compression
+        def save_csv_gzip(file_name, data):
+            with gzip.open(os.path.join(self.traj_dir, f'{file_name}.csv.gz'), 'wt') as file:
+                for line in data:
+                    file.write(line)
 
-        with open(os.path.join(self.traj_dir, 'record_object.csv'), 'w') as file1:
-            for line in self.buffer['object']:
-                file1.write(line)
-
-        with open(os.path.join(self.traj_dir, 'record_particle.csv'), 'w') as file1:
-            for line in self.buffer['particle']:
-                file1.write(line)
+        save_csv_gzip('record_robot', self.buffer['robot'])
+        save_csv_gzip('record_object', self.buffer['object'])
+        save_csv_gzip('record_particle', self.buffer['particle'])
 
         if abs_info is not None:
-            import json
             class NpEncoder(json.JSONEncoder):
                 def default(self, obj):
                     if isinstance(obj, np.integer):
                         return int(obj)
-                    if isinstance(obj, np.floating):
-                        # 👇️ alternatively use str()
+                    elif isinstance(obj, np.floating):
                         return float(obj)
-                    if isinstance(obj, np.ndarray):
+                    elif isinstance(obj, np.ndarray):
                         return obj.tolist()
-                    return json.JSONEncoder.default(self, obj)
+                    else:
+                        return super().default(obj)
 
             config_path = os.path.join(self.traj_dir, 'object_info.json')
             with open(config_path, "w") as f:
-                json.dump(abs_info, f, indent=4, cls=NpEncoder)
+                # Minimize JSON file size by removing indentation
+                json.dump(abs_info, f, cls=NpEncoder)
 
         self.buffer = {"robot": [], "object": [], "particle": []}
 
@@ -137,6 +135,8 @@ class DataRecorder():
     def start_replay(self, traj_dir, checker):
         self.traj_dir = traj_dir
         self.checker = checker
+
+        # Check for legacy record file
         if os.path.exists(os.path.join(self.traj_dir, 'record.csv')):
             with open(os.path.join(self.traj_dir, 'record.csv'), 'r') as file1:
                 Lines = file1.readlines()
@@ -144,30 +144,30 @@ class DataRecorder():
             try:
                 self.replayBuffer = [eval(line) for line in Lines]
             except:
-                self.replayBuffer  = []
+                self.replayBuffer = []
             self.legacy = True
         else:
-            self.replayBufferPtcl = None
-            with open(os.path.join(self.traj_dir, 'record_robot.csv'), 'r') as file1:
-                Lines = file1.readlines()
-            
-            with open(os.path.join(self.traj_dir, 'record_object.csv'), 'r') as file2:
-                linesObj = file2.readlines()
-            
-            with open(os.path.join(self.traj_dir, 'record_particle.csv'), 'r') as file3:
-                linesPtcl = file3.readlines()
+            self.legacy = False
+            self.replayBuffer = []
+            self.replayBufferObj = []
+            self.replayBufferPtcl = []
 
-            try:
-                self.replayBuffer = [eval(line) for line in Lines]
-                self.replayBufferObj = [eval(line) for line in linesObj]
-                self.replayBufferPtcl = [eval(line) for line in linesPtcl]
-            except:
-                self.replayBuffer = []
-                self.replayBufferObj = []
-                self.replayBufferPtcl = []
+            # Function to read gzip compressed CSV files
+            def read_gzip_csv(file_name):
+                try:
+                    with gzip.open(os.path.join(self.traj_dir, f'{file_name}.csv.gz'), 'rt') as file:
+                        return [eval(line) for line in file]
+                except FileNotFoundError:
+                    return []
+            
+
+            # Load the data from the new gzip compressed files
+            self.replayBuffer = read_gzip_csv('record_robot')
+            self.replayBufferObj = read_gzip_csv('record_object')
+            self.replayBufferPtcl = read_gzip_csv('record_particle')
 
             assert(len(self.replayBuffer) == len(self.replayBufferObj))
-            self.legacy = False
+
         self.replay_start = True
 
     def replay_data(self):
