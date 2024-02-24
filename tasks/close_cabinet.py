@@ -1,3 +1,4 @@
+import logging
 from .open_cabinet import OpenCabinet
 
 
@@ -6,3 +7,4 @@ class CloseCabinet(OpenCabinet):
         super().__init__(num_stages, horizon, stage_properties, cfg)
         self.task = 'close_cabinet'
         self.grip_open = cfg.gripper_open[self.task]
+        self.logger = logging.getLogger(__name__)

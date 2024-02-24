@@ -11,14 +11,15 @@ from omni.isaac.core.prims import XFormPrim
 from environment.physics_utils import set_physics_properties
 from environment.fluid_utils import set_particle_system_for_cup
 from pxr import Gf
+import logging
 
 
 class TransferWater(PourWater):
     def __init__(self, num_stages, horizon, stage_properties, cfg) -> None:
         super().__init__(num_stages, horizon, stage_properties, cfg)
-
         self.task = 'transfer_water'
         self.grip_open = cfg.gripper_open[self.task]
+        self.logger = logging.getLogger(__name__)
     
     def reset(self, robot_parameters, 
               scene_parameters, 
