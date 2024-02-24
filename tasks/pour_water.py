@@ -16,15 +16,14 @@ from utils.transforms import get_pose_relat, euler_angles_to_quat, quat_to_rot_m
 
 from pxr import Gf
 import logging
-logger = logging.getLogger(__name__)
 
 
 class PourWater(BaseTask):
     def __init__(self, num_stages, horizon, stage_properties, cfg) -> None:
         super().__init__(num_stages, horizon, stage_properties, cfg)
-
         self.task = 'pour_water'
         self.grip_open = cfg.gripper_open[self.task]
+        self.logger = logging.getLogger(__name__)
         self.use_gpu_physics = True
         self.iso_surface = cfg.iso_surface
 
@@ -188,7 +187,7 @@ class PourWater(BaseTask):
 
         while self.current_stage < self.end_stage:
             if self.time_step % 120 == 0:
-                logger.info(f"tick: {self.time_step}")
+                self.logger.info(f"tick: {self.time_step}")
             
             if self.time_step >= self.horizon:
                 self.is_success = -1
@@ -268,7 +267,7 @@ class PourWater(BaseTask):
                 current_target = None
                 if self.current_stage < 4:
                     self.current_stage += 1
-                    logger.info(f"enter stage {self.current_stage}")
+                    self.logger.info(f"enter stage {self.current_stage}")
             
             else:
                 target_joint_positions = self.c_controller.forward(

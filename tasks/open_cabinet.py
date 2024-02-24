@@ -13,7 +13,6 @@ from utils.env import position_reached, rotation_reached, get_pre_grasp_action, 
 from omni.isaac.core.simulation_context import SimulationContext
 
 import logging
-logger = logging.getLogger(__name__)
 
 
 class OpenCabinet(BaseTask):
@@ -21,6 +20,7 @@ class OpenCabinet(BaseTask):
         super().__init__(num_stages, horizon, stage_properties, cfg)
         self.task = 'open_cabinet'
         self.grip_open = cfg.gripper_open[self.task]
+        self.logger = logging.getLogger(__name__)
         self.use_gpu_physics = False
 
     def reset(self, robot_parameters, 
@@ -143,7 +143,7 @@ class OpenCabinet(BaseTask):
 
         while self.current_stage < self.end_stage:
             if self.time_step % 120 == 0:
-                logger.info(f"tick: {self.time_step}")
+                self.logger.info(f"tick: {self.time_step}")
             
             if self.time_step >= self.horizon:
                 self.is_success = -1
@@ -200,7 +200,7 @@ class OpenCabinet(BaseTask):
                 current_target = None
                 if self.current_stage < 2:
                     self.current_stage += 1
-                    logger.info(f"enter stage {self.current_stage}")
+                    self.logger.info(f"enter stage {self.current_stage}")
             
             else:
                 target_joint_positions = self.c_controller.forward(

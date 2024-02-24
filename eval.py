@@ -152,11 +152,16 @@ def main(cfg):
                 fname = fnames.pop(0)
                 gt_frames = anno['gt']
                 robot_base = gt_frames[0]['robot_base']
-                gt_actions = [
-                    gt_frames[1]['position_rotation_world'], gt_frames[2]['position_rotation_world'],
-                    gt_frames[3]['position_rotation_world'] if 'water' not in task \
-                    else (gt_frames[3]['position_rotation_world'][0], gt_frames[4]['position_rotation_world'][1])
-                ]
+
+                gt_actions = [gt_frames[1]['position_rotation_world'], gt_frames[2]['position_rotation_world']]
+                if gt_frames[3]['position_rotation_world'] is not None:
+                    gt_actions.append(
+                        gt_frames[3]['position_rotation_world'] if 'water' not in task \
+                        else (gt_frames[3]['position_rotation_world'][0], gt_frames[4]['position_rotation_world'][1])
+                    )
+                else:
+                    gt_actions.append(None)
+
                 if use_gt[0]:
                     assert gt_actions[0] is not None and gt_actions[1] is not None, "Use first gt action but it is missing"
                 if use_gt[1]:
