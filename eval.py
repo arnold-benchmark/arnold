@@ -17,7 +17,7 @@ from pathlib import Path
 from scipy.spatial.transform import Rotation as R
 
 from environment.runner_utils import get_simulation
-simulation_app, simulation_context, _ = get_simulation(headless=True, gpu_id=0)
+simulation_app, simulation_context, _ = get_simulation(headless=False, gpu_id=0)
 
 from dataset import InstructionEmbedding
 from tasks import load_task

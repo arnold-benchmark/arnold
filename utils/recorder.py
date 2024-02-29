@@ -5,6 +5,8 @@ import numpy as np
 from omni.isaac.core.prims import XFormPrim
 from omni.isaac.core.utils.types import ArticulationAction
 import gzip
+import json
+
 
 class DataRecorder():
     def __init__(self, robot_path, target_paths, frankabot, task_type):
