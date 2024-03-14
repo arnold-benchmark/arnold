@@ -3,7 +3,7 @@ hydra:
     dir: ${exp_dir}
 
 base_root: /root/arnold
-data_root: /vagrant/data
+data_root: /vagrant/data_for_challenge_final
 asset_root: /vagrant
 output_root: ${base_root}/output
 
