@@ -43,7 +43,7 @@ class DataRecorder():
     def stop_record(self):
         self.record = False
 
-    def save_buffer(self, abs_info=None):
+    def save_buffer(self, success, abs_info=None):
         print("write:", self.traj_dir)
         if not os.path.exists(self.traj_dir):
             os.makedirs(self.traj_dir)
@@ -57,6 +57,12 @@ class DataRecorder():
         save_csv_gzip('record_robot', self.buffer['robot'])
         save_csv_gzip('record_object', self.buffer['object'])
         save_csv_gzip('record_particle', self.buffer['particle'])
+
+        with open(os.path.join(self.traj_dir, 'success.txt'), 'w') as file:
+            if success:
+                file.write('success')
+            else:
+                file.write('fail')
 
         if abs_info is not None:
             class NpEncoder(json.JSONEncoder):
