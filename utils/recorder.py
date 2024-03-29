@@ -25,7 +25,7 @@ class DataRecorder():
         self.task_type = task_type
         self.checker = None
         self.ptcl_frame_skip = 20
-        self.buffer = {"robot": [], "object": [], "particles": []}
+        self.buffer = {"robot": [], "object": [], "particles": [], 'diffs': []}
 
     def get_replay_status(self):
         return self.replay_start
@@ -59,7 +59,7 @@ class DataRecorder():
         
         with open(os.path.join(self.traj_dir, 'success.txt'), 'w') as file:
             if success:
-                file.write('success')
+                file.write(f'success\n{self.checker.get_diff()}')
             else:
                 file.write('fail')
         

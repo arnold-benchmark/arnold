@@ -127,7 +127,7 @@ def main(cfg):
             eval_log = json.load(f)
     else:
         eval_log = {}
-
+   
     for task in task_list:
         if task not in eval_log:
             eval_log[task] = {}
