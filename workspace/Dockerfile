@@ -95,7 +95,7 @@ RUN echo '' > vulkan_check.sh
 
 
 # move the file here
-RUN cd /root/ && ls && git clone https://github.com/arnold-benchmark/arnold.git
+RUN cd /root/ && ls && git clone -b challenge https://github.com/arnold-benchmark/arnold.git
 RUN cd /root/ && mkdir .code
 # need to activate nvidia runtime during docker build, https://medium.com/@jgleeee/building-docker-images-that-require-nvidia-runtime-environment-1a23035a3a58
 RUN cd /root/arnold/ && /isaac-sim/python.sh -m pip install num2words==0.5.12 opencv-python==4.8.0.76 tqdm==4.66.1 ftfy==6.1.1 regex==2023.8.8 transformers==4.30.0 einops==0.6.1 tensorboard==2.11.2 sentencepiece==0.1.99 clip-by-openai==1.1 kornia==0.5.11
