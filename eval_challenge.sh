@@ -1,6 +1,12 @@
 #!/bin/bash
 
-checkpoint_dir="/root/arnold/"
+# Check if an argument is provided
+if [ $# -eq 0 ]; then
+    echo "No checkpoint directory provided. Usage: $0 <checkpoint_dir>"
+    exit 1
+fi
+
+checkpoint_dir=$1
 
 # Define an array of tasks
 tasks=('pickup_object' 'reorient_object' 'open_drawer' 'close_drawer' 'open_cabinet' 'close_cabinet' 'pour_water' 'transfer_water') 
