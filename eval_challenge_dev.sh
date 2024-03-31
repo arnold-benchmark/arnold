@@ -19,6 +19,6 @@ for i in {1..3}; do
     # Iterate over the tasks
     for task in "${tasks[@]}"; do
         echo "Running task: $task with checkpoint_dir: $checkpoint_dir and output_root: $output_root"
-        /isaac-sim/python.sh eval.py task="$task" model=peract lang_encoder=clip mode=eval use_gt=[0,0] visualize=0 record=True checkpoint_dir="$checkpoint_dir" output_root="$output_root" data_root=/vagrant/data_for_challenge_dev eval_splits=[val]
+        /isaac-sim/python.sh eval.py task="$task" model=peract lang_encoder=clip mode=eval use_gt=[0,0] visualize=0 record=True checkpoint_dir="$checkpoint_dir" output_root="$output_root" data_root=/vagrant/data_for_challenge_val eval_splits=[val]
     done
 done
