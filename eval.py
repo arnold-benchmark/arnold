@@ -39,10 +39,12 @@ def load_data(data_path):
 
 
 def load_agent(cfg, device):
-    checkpoint_path = None
-    for fname in os.listdir(cfg.checkpoint_dir):
-        if fname.endswith('best.pth'):
-            checkpoint_path = os.path.join(cfg.checkpoint_dir, fname)
+    if cfg.checkpoint_file:
+        checkpoint_path = cfg.checkpoint_file
+    else:
+        for fname in os.listdir(cfg.checkpoint_dir):
+            if fname.endswith('best.pth'):
+                checkpoint_path = os.path.join(cfg.checkpoint_dir, fname)
     
     assert checkpoint_path is not None, "best checkpoint not found"
     lang_embed_cache = None

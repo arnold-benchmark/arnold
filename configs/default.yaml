@@ -17,6 +17,7 @@ state_head: 0
 exp_name: ${mode}_${model}_${lang_encoder}_${state_head}
 exp_dir: ${output_root}/${task}/${exp_name}
 checkpoint_dir: ${exp_dir}/ckpts
+checkpoint_file: null
 
 
 # ------------------running arguments------------------
