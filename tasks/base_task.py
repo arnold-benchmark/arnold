@@ -60,13 +60,13 @@ class BaseTask(ABC):
         self._wait_for_loading()
 
     def stop(self):
+        if self.recorder is not None and self.recorder.record:
+            self.recorder.save_buffer(self.success())
+            self.recorder = None
         self.timeline.stop()
         self._wait_for_loading()
         self.remove_objects()
-        if self.recorder is not None and self.recorder.record:
-            self.recorder.save_buffer()
-            self.recorder = None
-    
+
     def reset(self,
               robot_parameters = None,
               scene_parameters = None,
