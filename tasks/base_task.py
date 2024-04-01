@@ -66,8 +66,7 @@ class BaseTask(ABC):
         self.timeline.stop()
         self._wait_for_loading()
         self.remove_objects()
-       
-    
+
     def reset(self,
               robot_parameters = None,
               scene_parameters = None,

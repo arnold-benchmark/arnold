@@ -27,7 +27,7 @@ class DataRecorder():
         self.task_type = task_type
         self.checker = None
         self.ptcl_frame_skip = 20
-        self.buffer = {"robot": [], "object": [], "particles": [], 'diffs': []}
+        self.buffer = {"robot": [], "object": [], "particles": [], "diffs": []}
 
     def get_replay_status(self):
         return self.replay_start
@@ -58,14 +58,11 @@ class DataRecorder():
         save_csv_gzip('record_object', self.buffer['object'])
         save_csv_gzip('record_particle', self.buffer['particle'])
 
-        
         with open(os.path.join(self.traj_dir, 'success.txt'), 'w') as file:
             if success:
                 file.write(f'success\n{self.checker.get_diff()}')
             else:
                 file.write('fail')
-        
-
 
         if abs_info is not None:
             class NpEncoder(json.JSONEncoder):

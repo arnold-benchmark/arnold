@@ -39,10 +39,12 @@ def load_data(data_path):
 
 
 def load_agent(cfg, device):
-    checkpoint_path = None
-    for fname in os.listdir(cfg.checkpoint_dir):
-        if fname.endswith('best.pth'):
-            checkpoint_path = os.path.join(cfg.checkpoint_dir, fname)
+    if cfg.checkpoint_file:
+        checkpoint_path = cfg.checkpoint_file
+    else:
+        for fname in os.listdir(cfg.checkpoint_dir):
+            if fname.endswith('best.pth'):
+                checkpoint_path = os.path.join(cfg.checkpoint_dir, fname)
     
     assert checkpoint_path is not None, "best checkpoint not found"
     lang_embed_cache = None
@@ -80,7 +82,7 @@ def load_agent(cfg, device):
 @hydra.main(config_path='./configs', config_name='default')
 def main(cfg):
     cfg.checkpoint_dir = cfg.checkpoint_dir.split(os.path.sep)
-    # cfg.checkpoint_dir[-2] = cfg.checkpoint_dir[-2].replace('eval', 'train')
+    cfg.checkpoint_dir[-2] = cfg.checkpoint_dir[-2].replace('eval', 'train')
     cfg.checkpoint_dir = os.path.sep.join(cfg.checkpoint_dir)
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -127,7 +129,7 @@ def main(cfg):
             eval_log = json.load(f)
     else:
         eval_log = {}
-   
+
     for task in task_list:
         if task not in eval_log:
             eval_log[task] = {}

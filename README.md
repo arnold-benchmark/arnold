@@ -22,12 +22,16 @@ Ran Gong<sup>✶</sup>, Jiangyong Huang<sup>✶</sup>, Yizhou Zhao, Haoran Geng,
     <img src="https://img.shields.io/badge/Data-Demos-9966ff" alt="Data"/></a>
     <a href="https://pytorch.org" target="_blank">
     <img src="https://img.shields.io/badge/Code-PyTorch-blue" alt="PyTorch"/></a>
+    <a href="https://sites.google.com/view/arnoldchallenge/" target="_blank">
+    <img src="https://img.shields.io/badge/Challenge-ARNOLD-orange" alt="PyTorch"/></a>
 </div>
 &nbsp;
 
-![teaser](docs/teaser.png)
+![teaser](assets/teaser.png)
 
-we present <tt>ARNOLD</tt>, a benchmark for **language-grounded** task learning with **continuous states** in **realistic 3D scenes**. We highlight the following major points:
+**[News]** We host the [ARNOLD Challenge](https://sites.google.com/view/arnoldchallenge/) on [CVPR 2024 Embodied AI Workshop](https://embodied-ai.org/). Welcome to participate.
+
+We present <tt>ARNOLD</tt>, a benchmark for **language-grounded** task learning with **continuous states** in **realistic 3D scenes**. We highlight the following major points:
 - <tt>ARNOLD</tt> is built on <tt>NVIDIA Isaac Sim</tt>, equipped with **photo-realistic** and **physically-accurate** simulation, covering **40 distinctive objects** and **20 scenes**.
 - <tt>ARNOLD</tt> is comprised of **8 language-conditioned tasks** that involve understanding object states and learning policies for continuous goals. For each task, there are **7 data splits**, including **unseen generalization**.
 - <tt>ARNOLD</tt> provides **10k expert demonstrations** with diverse template-generated language instructions, based on thousands of human annotations.
